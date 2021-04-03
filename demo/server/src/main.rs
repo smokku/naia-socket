@@ -1,12 +1,11 @@
 #[macro_use]
 extern crate log;
 
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 
 use naia_server_socket::{LinkConditionerConfig, Packet, ServerSocket};
 use simple_logger;
 use smol::io;
-use std::net::IpAddr;
 
 const DEFAULT_SERVER_PORT: u16 = 14191;
 const PING_MSG: &str = "ping";
