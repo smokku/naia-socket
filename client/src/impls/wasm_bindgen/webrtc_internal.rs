@@ -11,7 +11,7 @@ use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use web_sys::{
     ErrorEvent, MessageEvent, ProgressEvent, RtcConfiguration, RtcDataChannel, RtcDataChannelInit,
     RtcDataChannelType, RtcIceCandidate, RtcIceCandidateInit, RtcPeerConnection, RtcSdpType,
-    RtcSessionDescription, RtcSessionDescriptionInit, XmlHttpRequest,
+    RtcSessionDescriptionInit, XmlHttpRequest,
 };
 
 #[derive(Deserialize, Debug, Clone)]
@@ -101,7 +101,7 @@ pub fn webrtc_initialize(
     let peer_clone = peer.clone();
     let server_url_msg = Ref::new(server_url_str);
     let peer_offer_func: Box<dyn FnMut(JsValue)> = Box::new(move |e: JsValue| {
-        let session_description = e.dyn_into::<RtcSessionDescription>().unwrap();
+        let session_description = e.into();
         let peer_clone_2 = peer_clone.clone();
         let server_url_msg_clone = server_url_msg.clone();
         let peer_desc_func: Box<dyn FnMut(JsValue)> = Box::new(move |_: JsValue| {
@@ -198,11 +198,8 @@ pub fn webrtc_initialize(
         });
         let peer_desc_callback = Closure::wrap(peer_desc_func);
 
-        let mut session_description_init: RtcSessionDescriptionInit =
-            RtcSessionDescriptionInit::new(session_description.type_());
-        session_description_init.sdp(session_description.sdp().as_str());
         peer_clone
-            .set_local_description(&session_description_init)
+            .set_local_description(&session_description)
             .then(&peer_desc_callback);
         peer_desc_callback.forget();
     });
