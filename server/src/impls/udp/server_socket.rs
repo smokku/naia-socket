@@ -4,7 +4,7 @@ use futures_channel::mpsc;
 use futures_util::{pin_mut, select, FutureExt, StreamExt};
 use std::{
     io::Error as IoError,
-    net::{SocketAddr, UdpSocket},
+    net::{IpAddr, SocketAddr, UdpSocket},
 };
 
 use naia_socket_shared::LinkConditionerConfig;
@@ -27,8 +27,11 @@ pub struct ServerSocket {
 
 impl ServerSocket {
     /// Returns a new ServerSocket, listening at the given socket address
-    pub async fn listen(socket_address: SocketAddr) -> Box<dyn ServerSocketTrait> {
-        let socket = Async::new(UdpSocket::bind(&socket_address).unwrap()).unwrap();
+    pub async fn listen(
+        listen_address: SocketAddr,
+        _public_ip_addr: IpAddr,
+    ) -> Box<dyn ServerSocketTrait> {
+        let socket = Async::new(UdpSocket::bind(&listen_address).unwrap()).unwrap();
 
         let (to_client_sender, to_client_receiver) = mpsc::channel(CLIENT_CHANNEL_SIZE);
 
