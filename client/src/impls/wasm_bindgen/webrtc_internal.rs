@@ -49,22 +49,14 @@ pub fn webrtc_initialize(
 ) -> RtcDataChannel {
     let server_url_str = format!("http://{}/new_rtc_session", socket_address);
 
-    let mut peer_config: RtcConfiguration = RtcConfiguration::new();
-    let ice_server_config = IceServerConfig {
-        urls: ["stun:stun.l.google.com:19302".to_string()],
-    };
-    let ice_server_config_list = [ice_server_config];
-
-    peer_config.ice_servers(&JsValue::from_serde(&ice_server_config_list).unwrap());
-
-    let peer: RtcPeerConnection = RtcPeerConnection::new_with_configuration(&peer_config).unwrap();
+    let peer: RtcPeerConnection = RtcPeerConnection::new().unwrap();
 
     let mut data_channel_config: RtcDataChannelInit = RtcDataChannelInit::new();
     data_channel_config.ordered(false);
     data_channel_config.max_retransmits(0);
 
     let channel: RtcDataChannel =
-        peer.create_data_channel_with_data_channel_dict("webudp", &data_channel_config);
+        peer.create_data_channel_with_data_channel_dict("data", &data_channel_config);
     channel.set_binary_type(RtcDataChannelType::Arraybuffer);
 
     let cloned_channel = channel.clone();

@@ -1,9 +1,4 @@
-use std::{
-    io::Error as IoError,
-    net::{IpAddr, SocketAddr, UdpSocket},
-};
-
-use log::debug;
+use std::{io::Error as IoError, net::SocketAddr};
 
 use async_trait::async_trait;
 
@@ -37,20 +32,13 @@ pub struct ServerSocket {
 impl ServerSocket {
     /// Returns a new ServerSocket, listening at the given socket address
     pub async fn listen(
-        listen_address: SocketAddr,
-        public_ip_addr: IpAddr,
+        session_listen_addr: SocketAddr,
+        webrtc_listen_addr: SocketAddr,
+        public_webrtc_addr: SocketAddr,
     ) -> Box<dyn ServerSocketTrait> {
-        let webrtc_listen_ip: IpAddr = listen_address.ip();
-        let webrtc_listen_port =
-            get_available_port(webrtc_listen_ip.to_string().as_str()).expect("no available port");
-        let webrtc_listen_addr = SocketAddr::new(webrtc_listen_ip, webrtc_listen_port);
-        let webrtc_public_address = SocketAddr::new(public_ip_addr, webrtc_listen_port);
-
-        debug!("Using port {} for webrtc listener", webrtc_listen_addr);
-
         let (to_client_sender, to_client_receiver) = mpsc::channel(CLIENT_CHANNEL_SIZE);
 
-        let rtc_server = RtcServer::new(webrtc_listen_addr, webrtc_public_address).await;
+        let rtc_server = RtcServer::new(webrtc_listen_addr, public_webrtc_addr).await;
 
         let socket = ServerSocket {
             rtc_server,
@@ -58,7 +46,7 @@ impl ServerSocket {
             to_client_receiver,
         };
 
-        start_session_server(listen_address, socket.rtc_server.session_endpoint());
+        start_session_server(session_listen_addr, socket.rtc_server.session_endpoint());
 
         Box::new(socket)
     }
@@ -136,22 +124,6 @@ impl ServerSocketTrait for ServerSocket {
         config: &LinkConditionerConfig,
     ) -> Box<dyn ServerSocketTrait> {
         Box::new(LinkConditioner::new(config, self))
-    }
-}
-
-fn get_available_port(ip: &str) -> Option<u16> {
-    (8000..9000).find(|port| port_is_available(ip, *port))
-}
-
-fn port_is_available(ip: &str, port: u16) -> bool {
-    debug!("Trying to bind to {} {}", ip, port);
-
-    match UdpSocket::bind((ip, port)) {
-        Ok(_) => {
-            debug!("Was able to bind to {} {}", ip, port);
-            true
-        }
-        Err(_) => false,
     }
 }
 
