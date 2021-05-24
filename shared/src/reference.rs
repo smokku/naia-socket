@@ -6,11 +6,11 @@ cfg_if! {
         };
 
         #[derive(Debug)]
-        pub struct Guard<'a, T> {
+        pub struct Guard<'a, T: ?Sized> {
             inner: MutexGuard<'a, T>,
         }
 
-        impl<'a, T> Deref for Guard<'a, T> {
+        impl<'a, T: ?Sized> Deref for Guard<'a, T> {
             type Target = T;
 
             fn deref(&self) -> &Self::Target {
@@ -18,7 +18,7 @@ cfg_if! {
             }
         }
 
-        impl<'a, T> DerefMut for Guard<'a, T> {
+        impl<'a, T: ?Sized> DerefMut for Guard<'a, T> {
             fn deref_mut(&mut self) -> &mut Self::Target {
                 &mut self.inner
             }
@@ -26,7 +26,7 @@ cfg_if! {
 
         /// A reference abstraction that can handle single-threaded and multi-threaded environments
         #[derive(Debug)]
-        pub struct Ref<T> {
+        pub struct Ref<T: ?Sized> {
             inner: Arc<Mutex<T>>,
         }
 
@@ -37,6 +37,9 @@ cfg_if! {
                     inner: Arc::new(Mutex::new(value)),
                 }
             }
+        }
+
+        impl<T: ?Sized> Ref<T> {
 
             /// Immutably borrows the wrapped value
             pub fn borrow(&self) -> Guard<T> {
@@ -51,9 +54,21 @@ cfg_if! {
                     inner: self.inner.lock().unwrap(),
                 }
             }
+
+            /// Returns a ref to the inner smart pointer
+            pub fn inner(&self) -> Arc<Mutex<T>> {
+                return self.inner.clone();
+            }
+
+            /// Creates a new 'Ref' containing raw smart pointer 'inner'
+            pub fn new_raw(inner: Arc<Mutex<T>>) -> Self {
+                Ref {
+                    inner,
+                }
+            }
         }
 
-        impl<T> Clone for Ref<T> {
+        impl<T: ?Sized> Clone for Ref<T> {
             fn clone(&self) -> Self {
                 Ref {
                     inner: self.inner.clone(),
@@ -69,11 +84,11 @@ cfg_if! {
         };
 
         #[derive(Debug)]
-        pub struct Guard<'a, T> {
+        pub struct Guard<'a, T: ?Sized> {
             inner: StdRef<'a, T>,
         }
 
-        impl<'a, T> Deref for Guard<'a, T> {
+        impl<'a, T: ?Sized> Deref for Guard<'a, T> {
             type Target = T;
 
             fn deref(&self) -> &Self::Target {
@@ -82,11 +97,11 @@ cfg_if! {
         }
 
         #[derive(Debug)]
-        pub struct GuardMut<'a, T> {
+        pub struct GuardMut<'a, T: ?Sized> {
             inner: StdRefMut<'a, T>,
         }
 
-        impl<'a, T> Deref for GuardMut<'a, T> {
+        impl<'a, T: ?Sized> Deref for GuardMut<'a, T> {
             type Target = T;
 
             fn deref(&self) -> &Self::Target {
@@ -94,7 +109,7 @@ cfg_if! {
             }
         }
 
-        impl<'a, T> DerefMut for GuardMut<'a, T> {
+        impl<'a, T: ?Sized> DerefMut for GuardMut<'a, T> {
             fn deref_mut(&mut self) -> &mut Self::Target {
                 &mut self.inner
             }
@@ -103,7 +118,7 @@ cfg_if! {
         /// A reference abstraction that can handle single-threaded and multi-threaded
         /// environments
         #[derive(Debug)]
-        pub struct Ref<T> {
+        pub struct Ref<T: ?Sized> {
             inner: Rc<RefCell<T>>,
         }
 
@@ -114,7 +129,9 @@ cfg_if! {
                     inner: Rc::new(RefCell::new(value)),
                 }
             }
+        }
 
+        impl<T: ?Sized> Ref<T> {
             /// Immutably borrows the wrapped value
             pub fn borrow(&self) -> Guard<T> {
                 Guard {
@@ -128,9 +145,21 @@ cfg_if! {
                     inner: self.inner.borrow_mut(),
                 }
             }
+
+            /// Returns a ref to the inner smart pointer
+            pub fn inner(&self) -> Rc<RefCell<T>> {
+                return self.inner.clone();
+            }
+
+            /// Creates a new 'Ref' containing raw smart pointer 'inner'
+            pub fn new_raw(inner: Rc<RefCell<T>>) -> Self {
+                Ref {
+                    inner,
+                }
+            }
         }
 
-        impl<T> Clone for Ref<T> {
+        impl<T: ?Sized> Clone for Ref<T> {
             fn clone(&self) -> Self {
                 Ref {
                     inner: self.inner.clone(),
